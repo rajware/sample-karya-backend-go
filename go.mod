@@ -3,6 +3,7 @@ module github.com/rajware/sample-tasks-backend-go
 go 1.21.0
 
 require (
+	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.9.0
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63

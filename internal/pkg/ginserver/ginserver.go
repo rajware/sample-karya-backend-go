@@ -10,10 +10,15 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/rajware/sample-tasks-backend-go/internal/pkg/tasks"
 )
 
+// Server is an HTTP server which serves static files
+// and a REST api to perform CRUD operations on Tasks.
+// It depends on an implementation of tasks.TaskRepository
+// to store and retrieve Task data.
 type Server struct {
 	tasks  *tasks.Tasks
 	router *gin.Engine
@@ -26,16 +31,8 @@ type apiStatus struct {
 	Message string      `json:"message"`
 }
 
-// func success(data interface{}) ApiStatus {
-// 	return ApiStatus{
-// 		Data:    data,
-// 		Error:   0,
-// 		Message: "success",
-// 	}
-// }
-
 func succeed(c *gin.Context, data interface{}) {
-	c.IndentedJSON(http.StatusOK, apiStatus{
+	c.JSON(http.StatusOK, apiStatus{
 		Data:    data,
 		Error:   0,
 		Message: "success",
@@ -141,14 +138,17 @@ func (s *Server) deleteTaskByID(c *gin.Context) {
 	succeed(c, deletedTask)
 }
 
-func (r *Server) Run() {
-	if r.router == nil {
+// Run starts listening and serving HTTP Requests. It also listens for
+// SIGINT and SIGTERM, and stops listening if it does. Note: this method
+// will block the calling goroutine indefinitely unless an error or an
+// interrupt signal happens.
+func (s *Server) Run() {
+	if s.router == nil {
 		panic("router not set up")
 	}
 
-	port := ":" + strconv.FormatInt(int64(r.port), 10)
-
-	server := http.Server{Addr: port, Handler: r.router}
+	port := ":" + strconv.FormatInt(int64(s.port), 10)
+	server := http.Server{Addr: port, Handler: s.router}
 
 	// Use a channel to signal server closure
 	serverClosed := make(chan struct{})
@@ -185,19 +185,23 @@ func (r *Server) Run() {
 	log.Println("Server shut down.")
 }
 
-var defaultServer = &Server{port: 8080}
+var newServer = &Server{port: 8080}
 
+// New returns a Server instance. An implementation of tasks.TaskRepository
+// is required, to ensure task data can be stored and retrieved.
 func New(repo tasks.TaskRepository) *Server {
 	if repo == nil {
 		panic("could not initialize data store")
 	}
-	defaultServer.tasks = tasks.New(repo)
-	defaultServer.router = gin.Default()
-	defaultServer.router.GET("/tasks", defaultServer.getAllTasks)
-	defaultServer.router.GET("/tasks/:id", defaultServer.getTaskByID)
-	defaultServer.router.POST("/tasks", defaultServer.addTask)
-	defaultServer.router.PUT("/tasks", defaultServer.updateTask)
-	defaultServer.router.DELETE("/tasks/:id", defaultServer.deleteTaskByID)
+	newServer.tasks = tasks.New(repo)
+	r := gin.Default()
+	r.Use(static.Serve("/", static.LocalFile(".", true)))
+	r.GET("/tasks", newServer.getAllTasks)
+	r.GET("/tasks/:id", newServer.getTaskByID)
+	r.POST("/tasks", newServer.addTask)
+	r.PUT("/tasks", newServer.updateTask)
+	r.DELETE("/tasks/:id", newServer.deleteTaskByID)
+	newServer.router = r
 
-	return defaultServer
+	return newServer
 }

@@ -17,9 +17,9 @@ func init() {
 
 func TestCommandLineOpt(t *testing.T) {
 	os.Setenv("MY_NAME", "Hello2")
-	os.WriteFile("myname.txt", []byte("Hello3"), 0755)
-	defer os.Remove("myname.txt")
-	os.Setenv("MY_NAMEFILE", "myname.txt")
+	os.WriteFile("myname.test", []byte("Hello3"), 0755)
+	defer os.Remove("myname.test")
+	os.Setenv("MY_NAMEFILE", "myname.test")
 
 	testOpt(t, "command line option", "Hello")
 

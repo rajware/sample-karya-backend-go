@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -31,6 +32,7 @@ func testRoute(srv *Server, verb string, path string, body io.Reader) routeTestR
 }
 
 func TestIt(t *testing.T) {
+	// Set up data subdirectory
 	datadir, err := taskstest.SetupDataDirectory()
 	if err != nil {
 		t.Logf("data directory creation failed with:%v", err)
@@ -38,16 +40,33 @@ func TestIt(t *testing.T) {
 	}
 	defer taskstest.RemoveDataDirectory()
 
+	// Set up SQLite repo
 	datafile := filepath.Join(datadir, "test.db")
-
 	t.Logf("Opening data file %v", datafile)
 	d := sqlite.Open(datafile)
 	tr := gormrepo.New(d, &gorm.Config{})
 
-	r := New(tr)
+	// Set up test server
+	testserver := New(tr)
 
-	result := testRoute(r, "GET", "/tasks", nil)
+	// Set up file for static serving
+	os.WriteFile("myfile.test", []byte("Hello3"), 0755)
+	defer os.Remove("myfile.test")
+
+	// Test static file
+	result := testRoute(testserver, "GET", "/myfile.test", nil)
 	if result.statusCode != http.StatusOK {
 		t.Errorf("GET / failed. Response was:%v", result.body)
+	}
+	t.Logf("Result:%+v", result)
+
+	// Test list of tasks
+	result = testRoute(testserver, "GET", "/tasks", nil)
+	if result.statusCode != http.StatusOK {
+		t.Errorf("GET /tasks failed. Response was:%v", result.body)
+	}
+
+	if result.body != `{"data":[],"error":0,"message":"success"}` {
+		t.Errorf("GET /tasks failed. Response was:%v", result.body)
 	}
 }
