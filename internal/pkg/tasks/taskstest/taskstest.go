@@ -1,13 +1,58 @@
+// Package taskstest provides utilities for testing tasks.TaskRepository
+// implementations. It should be used only in tests.
 package taskstest
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/rajware/sample-tasks-backend-go/internal/pkg/tasks"
 )
 
+func dataDirectoryPath() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	datadir := filepath.Join(wd, "data")
+	return datadir, nil
+}
+
+// SetupDataDirectory creates a subdirectory called 'data' under the
+// current working directory and returns the absolute path, or an error.
+func SetupDataDirectory() (string, error) {
+	datadir, err := dataDirectoryPath()
+	if err != nil {
+		return "", err
+	}
+	err = os.MkdirAll(datadir, 0755)
+	if err != nil {
+		return "", err
+	}
+
+	return datadir, nil
+}
+
+// RemoveDataDirectory deletes a subdirectory called 'data' under the
+// current working directory, or returns an error.
+func RemoveDataDirectory() error {
+	datadir, err := dataDirectoryPath()
+	if err != nil {
+		return err
+	}
+	err = os.RemoveAll(datadir)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TestTaskRepository runs a full suite of tests on a tasks.TestTaskRepository
+// implementation.
 func TestTaskRepository(t *testing.T, tr tasks.TaskRepository) {
 	tsks := tasks.New(tr)
 

@@ -1,4 +1,4 @@
-package gintasksrouter
+package ginserver
 
 import (
 	"context"
@@ -11,74 +11,77 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rajware/sample-tasks-backend-go/internal/pkg/gormrepo"
 	"github.com/rajware/sample-tasks-backend-go/internal/pkg/tasks"
 )
 
 type Server struct {
 	tasks  *tasks.Tasks
 	router *gin.Engine
-	Port   int
+	port   int
 }
 
-type ApiStatus struct {
+type apiStatus struct {
 	Data    interface{} `json:"data"`
 	Error   int         `json:"error"`
 	Message string      `json:"message"`
 }
 
-func success(data interface{}) ApiStatus {
-	return ApiStatus{
+// func success(data interface{}) ApiStatus {
+// 	return ApiStatus{
+// 		Data:    data,
+// 		Error:   0,
+// 		Message: "success",
+// 	}
+// }
+
+func succeed(c *gin.Context, data interface{}) {
+	c.IndentedJSON(http.StatusOK, apiStatus{
 		Data:    data,
 		Error:   0,
 		Message: "success",
-	}
+	})
+}
+
+func fail(c *gin.Context, statuscode int, err error) {
+	c.AbortWithStatusJSON(
+		statuscode,
+		apiStatus{
+			Data:    nil,
+			Error:   statuscode,
+			Message: err.Error(),
+		},
+	)
 }
 
 func (s *Server) getAllTasks(c *gin.Context) {
 	alltasks, err := s.tasks.GetAll()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusInternalServerError, err)
 		return
 	}
-	c.IndentedJSON(http.StatusOK, success(alltasks))
+
+	succeed(c, alltasks)
 }
 
-func (s *Server) getTaskById(c *gin.Context) {
+func (s *Server) getTaskByID(c *gin.Context) {
 	idstr := c.Param("id")
 	id, err := strconv.ParseUint(idstr, 10, 64)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusBadRequest, err)
 		return
 	}
 
 	task, err := s.tasks.GetById(uint(id))
 	if errors.Is(err, tasks.ErrNotFound) {
-		c.AbortWithStatusJSON(http.StatusNotFound, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusNotFound,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, success(task))
+	succeed(c, task)
 }
 
 func (s *Server) addTask(c *gin.Context) {
@@ -86,25 +89,17 @@ func (s *Server) addTask(c *gin.Context) {
 
 	err := c.BindJSON(&newTask)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusBadRequest, err)
 		return
 	}
 
 	addedTask, err := s.tasks.NewTask(newTask.Description, newTask.Deadline)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, success(addedTask))
+	succeed(c, addedTask)
 }
 
 func (s *Server) updateTask(c *gin.Context) {
@@ -112,58 +107,38 @@ func (s *Server) updateTask(c *gin.Context) {
 
 	err := c.BindJSON(&theTask)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusBadRequest, err)
 		return
 	}
 
 	updatedTask, err := s.tasks.Update(&theTask)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, success(updatedTask))
+	succeed(c, updatedTask)
 }
 
-func (s *Server) deleteTaskById(c *gin.Context) {
+func (s *Server) deleteTaskByID(c *gin.Context) {
 	idstr := c.Param("id")
 	id, err := strconv.ParseUint(idstr, 10, 64)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusBadRequest, err)
 		return
 	}
 
 	deletedTask, err := s.tasks.DeleteById(uint(id))
 	if errors.Is(err, tasks.ErrNotFound) {
-		c.AbortWithStatusJSON(http.StatusNotFound, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusNotFound,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, ApiStatus{
-			Data:    nil,
-			Error:   http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		fail(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, success(deletedTask))
+	succeed(c, deletedTask)
 }
 
 func (r *Server) Run() {
@@ -171,7 +146,7 @@ func (r *Server) Run() {
 		panic("router not set up")
 	}
 
-	port := ":" + strconv.FormatInt(int64(r.Port), 10)
+	port := ":" + strconv.FormatInt(int64(r.port), 10)
 
 	server := http.Server{Addr: port, Handler: r.router}
 
@@ -210,21 +185,19 @@ func (r *Server) Run() {
 	log.Println("Server shut down.")
 }
 
-var defaultServer = &Server{Port: 8080}
+var defaultServer = &Server{port: 8080}
 
-func New() *Server {
-
-	repo := gormrepo.New()
+func New(repo tasks.TaskRepository) *Server {
 	if repo == nil {
 		panic("could not initialize data store")
 	}
 	defaultServer.tasks = tasks.New(repo)
 	defaultServer.router = gin.Default()
 	defaultServer.router.GET("/tasks", defaultServer.getAllTasks)
-	defaultServer.router.GET("/tasks/:id", defaultServer.getTaskById)
+	defaultServer.router.GET("/tasks/:id", defaultServer.getTaskByID)
 	defaultServer.router.POST("/tasks", defaultServer.addTask)
 	defaultServer.router.PUT("/tasks", defaultServer.updateTask)
-	defaultServer.router.DELETE("/tasks/:id", defaultServer.deleteTaskById)
+	defaultServer.router.DELETE("/tasks/:id", defaultServer.deleteTaskByID)
 
 	return defaultServer
 }

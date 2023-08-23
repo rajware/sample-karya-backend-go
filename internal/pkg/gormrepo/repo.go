@@ -3,10 +3,7 @@ package gormrepo
 import (
 	"errors"
 	"log"
-	"os"
-	"path/filepath"
 
-	"github.com/glebarez/sqlite"
 	"github.com/rajware/sample-tasks-backend-go/internal/pkg/tasks"
 	"gorm.io/gorm"
 )
@@ -77,21 +74,12 @@ func (gtr *GORMTaskRepository) DeleteById(id uint) (*tasks.Task, error) {
 	return deltask, nil
 }
 
-func New() *GORMTaskRepository {
-	newRepo := &GORMTaskRepository{}
-
-	wd, err := os.Getwd()
-	if err != nil {
-		panic("failed to connect to database")
+func New(d gorm.Dialector, o gorm.Option) *GORMTaskRepository {
+	newRepo := &GORMTaskRepository{
+		db: nil,
 	}
-	datadir := filepath.Join(wd, "data")
-	err = os.MkdirAll(datadir, os.ModeDir)
-	if err != nil {
-		panic(err)
-	}
-	datafile := filepath.Join(datadir, "test.db")
 
-	db, err := gorm.Open(sqlite.Open(datafile), &gorm.Config{})
+	db, err := gorm.Open(d, o)
 	if err != nil {
 		panic("failed to connect database")
 	}
