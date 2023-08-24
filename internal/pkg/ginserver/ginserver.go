@@ -68,7 +68,7 @@ func (s *Server) getTaskByID(c *gin.Context) {
 		return
 	}
 
-	task, err := s.tasks.GetById(uint(id))
+	task, err := s.tasks.GetByID(uint(id))
 	if errors.Is(err, tasks.ErrNotFound) {
 		fail(c, http.StatusNotFound, err)
 		return
@@ -125,7 +125,7 @@ func (s *Server) deleteTaskByID(c *gin.Context) {
 		return
 	}
 
-	deletedTask, err := s.tasks.DeleteById(uint(id))
+	deletedTask, err := s.tasks.DeleteByID(uint(id))
 	if errors.Is(err, tasks.ErrNotFound) {
 		fail(c, http.StatusNotFound, err)
 		return

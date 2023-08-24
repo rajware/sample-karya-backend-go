@@ -1,5 +1,3 @@
-// Package taskstest provides utilities for testing tasks.TaskRepository
-// implementations. It should be used only in tests.
 package taskstest
 
 import (
@@ -88,7 +86,7 @@ func TestTaskRepository(t *testing.T, tr tasks.TaskRepository) {
 		t.Errorf("task list should not be empty")
 	}
 
-	tsk1, err = tsks.GetById(tsk2ID)
+	tsk1, err = tsks.GetByID(tsk2ID)
 	if err != nil {
 		t.Errorf("Get failed with:%v", err)
 	}
@@ -97,7 +95,7 @@ func TestTaskRepository(t *testing.T, tr tasks.TaskRepository) {
 		t.Errorf("Get fetched wrong data")
 	}
 
-	tsk2, err = tsks.GetById(255)
+	tsk2, err = tsks.GetByID(255)
 	if err == nil {
 		t.Errorf("Get retrieved invalid data:%+v", tsk2)
 	}
@@ -118,24 +116,24 @@ func TestTaskRepository(t *testing.T, tr tasks.TaskRepository) {
 		t.Errorf("data was not updated")
 	}
 
-	tsk1, err = tsks.GetById(tsk2ID)
+	tsk1, err = tsks.GetByID(tsk2ID)
 	if err != nil || !tsk1.Completed {
 		t.Errorf("data was not updated")
 	}
 
-	_, err = tsks.DeleteById(255)
+	_, err = tsks.DeleteByID(255)
 	if err == nil || !errors.Is(err, tasks.ErrNotFound) {
 		t.Errorf("unexpected error behaviour:%v", err)
 	}
 
-	tsk1, err = tsks.DeleteById(tsk2ID)
+	tsk1, err = tsks.DeleteByID(tsk2ID)
 	if err != nil {
 		t.Errorf("DeleteById failed with:%v", err)
 	}
 
 	t.Logf("Deleted data:%+v", tsk1)
 
-	tsk2, err = tsks.GetById(tsk2ID)
+	tsk2, err = tsks.GetByID(tsk2ID)
 	if !errors.Is(err, tasks.ErrNotFound) {
 		t.Errorf("delete did not work. Data found:%+v", tsk2)
 	}
