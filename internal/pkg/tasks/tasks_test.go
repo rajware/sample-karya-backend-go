@@ -17,7 +17,7 @@ func (t *TestTaskRepository) GetAll() ([]*tasks.Task, error) {
 	return t.tasks, nil
 }
 
-func (t *TestTaskRepository) GetById(id uint) (*tasks.Task, error) {
+func (t *TestTaskRepository) GetByID(id uint) (*tasks.Task, error) {
 	index := slices.IndexFunc(t.tasks, func(t *tasks.Task) bool {
 		if t != nil {
 			return t.ID == id
@@ -56,7 +56,7 @@ func (t *TestTaskRepository) Update(ut *tasks.Task) (*tasks.Task, error) {
 	return t.tasks[index], nil
 }
 
-func (t *TestTaskRepository) DeleteById(id uint) (*tasks.Task, error) {
+func (t *TestTaskRepository) DeleteByID(id uint) (*tasks.Task, error) {
 	index := slices.IndexFunc(t.tasks, func(t *tasks.Task) bool {
 		return t.ID == id
 	})

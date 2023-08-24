@@ -23,10 +23,10 @@ type Task struct {
 // TaskRepository represents any data store that can store Tasks.
 type TaskRepository interface {
 	GetAll() ([]*Task, error)          // Get all Tasks, undefined order
-	GetById(id uint) (*Task, error)    // Get Task by ID, or error
+	GetByID(id uint) (*Task, error)    // Get Task by ID, or error
 	Add(*Task) (*Task, error)          // Add Task, providing auto generated ID
 	Update(*Task) (*Task, error)       // Update Task. Task should exist
-	DeleteById(id uint) (*Task, error) // Delete Task by ID, or error. Task should exist
+	DeleteByID(id uint) (*Task, error) // Delete Task by ID, or error. Task should exist
 }
 
 // Tasks represents a collection of tasks stored and retrieved from
@@ -69,7 +69,7 @@ func (t *Tasks) GetByID(id uint) (*Task, error) {
 		return nil, ErrNoRepo
 	}
 
-	return t.repo.GetById(id)
+	return t.repo.GetByID(id)
 }
 
 // Update updates the given task in the repository, and
@@ -91,7 +91,7 @@ func (t *Tasks) DeleteByID(id uint) (*Task, error) {
 		return nil, ErrNoRepo
 	}
 
-	return t.repo.DeleteById(id)
+	return t.repo.DeleteByID(id)
 }
 
 // New returns a new Tasks domain context object. It needs
