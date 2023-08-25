@@ -2,7 +2,6 @@ package gormrepo
 
 import (
 	"errors"
-	"log"
 
 	"github.com/rajware/sample-tasks-backend-go/internal/pkg/tasks"
 	"gorm.io/gorm"
@@ -53,7 +52,6 @@ func (gtr *GORMTaskRepository) Add(tsk *tasks.Task) (*tasks.Task, error) {
 // returns the updated task or an error. The task must
 // exist in the data store.
 func (gtr *GORMTaskRepository) Update(tsk *tasks.Task) (*tasks.Task, error) {
-	log.Printf("The task as received for update:%+v", tsk)
 	eng := gtr.db.Model(tsk).Updates(map[string]interface{}{
 		"Description": tsk.Description,
 		"Deadline":    tsk.Deadline,

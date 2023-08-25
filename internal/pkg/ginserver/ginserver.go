@@ -3,7 +3,7 @@ package ginserver
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +19,14 @@ import (
 // and a REST api to perform CRUD operations on Tasks.
 // It depends on an implementation of tasks.TaskRepository
 // to store and retrieve Task data.
+//
+// It handles the following routes:
+//
+// GET /tasks
+// GET /tasks/:id
+// POST /tasks
+// PUT /tasks
+// DELETE /tasks/:id
 type Server struct {
 	tasks  *tasks.Tasks
 	router *gin.Engine
@@ -165,24 +173,26 @@ func (s *Server) Run() {
 		// Wait for signal
 		<-signalReceived
 
-		log.Println("Server shutting down...")
+		slog.Info("Server shutting down...")
 		if err := server.Shutdown(context.Background()); err != nil {
 			// Error from closing listeners, or context timeout:
-			log.Fatalf("Error during HTTP server shutdown: %v.", err)
+			slog.Error("Error during HTTP server shutdown: %v.", err)
+			os.Exit(1)
 		}
 
 		close(serverClosed)
 	}()
 
 	// Start listening using the server
-	log.Printf("Server starting on port %v...\n", port)
+	slog.Info("Server starting on port %v...\n", port)
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatalf("The server failed with the following error: %v.\n", err)
+		slog.Error("The server failed with the following error: %v.\n", err)
+		os.Exit(1)
 	}
 
 	<-serverClosed
 
-	log.Println("Server shut down.")
+	slog.Info("Server shut down.")
 }
 
 var newServer = &Server{port: 8080}
