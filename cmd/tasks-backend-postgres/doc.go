@@ -6,11 +6,11 @@
 // variables.
 //
 // FLAG, ENVVAR, DEFAULT VALUE, DESCRIPTION
-// -s, DB_SERVER,"", Name or IP address of a Postgres server
-// -t, DB_SERVERPORT,"5432", Port on the Postgres server
-// -u, DB_USERNAME, "", User ID
-// -p, DB_PASSWORD, "", Password
-// -d, DB_DATABASE, "", Name of database to connect to
+// -s, TASKS_DBSERVER,"", Name or IP address of a Postgres server
+// -t, TASKS_DBPORT,"5432", Port on the Postgres server
+// -u, TASKS_USERNAME, "", User ID
+// -p, TASKS_PASSWORD, "", Password
+// -d, TASKS_DATABASE, "", Name of database to connect to
 //
 // Each value above can also be read from a file, whose
 // location can be specified using an environment variable that

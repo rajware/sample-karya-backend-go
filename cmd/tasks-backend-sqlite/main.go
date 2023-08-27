@@ -36,12 +36,15 @@ func main() {
 
 	// Set up SQLite repository
 	datafile := filepath.Join(datadir, "tasks.db")
-	slog.Info("Opening data file %v", datafile)
+	slog.Info("Opening data file.", "file", datafile)
 	d := sqlite.Open(datafile)
 	tr := gormrepo.New(d, &gorm.Config{})
 
 	// Start Server
-	srv := ginserver.New(tr)
+	srv, err := ginserver.New(tr, 8080)
+	if err != nil {
+		slog.Error("Fatal error: could not start server.", "Error", err)
+	}
 	slog.Info("Starting server...")
 	srv.Run()
 }

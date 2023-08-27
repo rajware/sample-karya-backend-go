@@ -39,19 +39,19 @@ func main() {
 
 	allOk := true
 
-	servernameOpt, ok := verifyoption(&servernameOpt, "DB_SERVER", "", "Postgres server name not provided.")
+	servernameOpt, ok := verifyoption(&servernameOpt, "TASKS_DBSERVER", "", "Postgres server name not provided.")
 	allOk = allOk && ok
 
-	serverportOpt, ok = verifyoption(&serverportOpt, "DB_SERVERPORT", "5432", "Postgres server port not provided.")
+	serverportOpt, ok = verifyoption(&serverportOpt, "TASKS_DBPORT", "5432", "Postgres server port not provided.")
 	allOk = allOk && ok
 
-	usernameOpt, ok = verifyoption(&usernameOpt, "DB_USERNAME", "", "user name not provided.")
+	usernameOpt, ok = verifyoption(&usernameOpt, "TASKS_USERNAME", "", "user name not provided.")
 	allOk = allOk && ok
 
-	passwordOpt, ok = verifyoption(&passwordOpt, "DB_PASSWORD", "", "password not provided.")
+	passwordOpt, ok = verifyoption(&passwordOpt, "TASKS_PASSWORD", "", "password not provided.")
 	allOk = allOk && ok
 
-	databasenameOpt, ok = verifyoption(&databasenameOpt, "DB_DATABASE", "", "database name not provided.")
+	databasenameOpt, ok = verifyoption(&databasenameOpt, "TASKS_DBNAME", "", "database name not provided.")
 	allOk = allOk && ok
 
 	if !allOk {
@@ -70,7 +70,10 @@ func main() {
 	tr := gormrepo.New(d, &gorm.Config{})
 
 	// Start Server
-	srv := ginserver.New(tr)
+	srv, err := ginserver.New(tr, 8080)
+	if err != nil {
+		slog.Error("Fatal error: could not start server.", "Error", err)
+	}
 	slog.Info("Starting server...")
 	srv.Run()
 }

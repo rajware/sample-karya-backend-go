@@ -47,7 +47,11 @@ func TestIt(t *testing.T) {
 	tr := gormrepo.New(d, &gorm.Config{})
 
 	// Set up test server
-	testserver := New(tr)
+	testserver, err := New(tr, 8080)
+	if err != nil {
+		t.Logf("could not start server: %v", err)
+		t.FailNow()
+	}
 
 	// Set up file for static serving
 	os.WriteFile("myfile.test", []byte("Hello3"), 0755)

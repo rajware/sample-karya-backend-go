@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 
@@ -176,7 +177,7 @@ func (s *Server) Run() {
 		slog.Info("Server shutting down...")
 		if err := server.Shutdown(context.Background()); err != nil {
 			// Error from closing listeners, or context timeout:
-			slog.Error("Error during HTTP server shutdown: %v.", err)
+			slog.Error("problem during HTTP server shutdown.", "Error", err)
 			os.Exit(1)
 		}
 
@@ -184,9 +185,9 @@ func (s *Server) Run() {
 	}()
 
 	// Start listening using the server
-	slog.Info("Server starting on port %v...\n", port)
+	slog.Info("Server starting.", "Port", port)
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		slog.Error("The server failed with the following error: %v.\n", err)
+		slog.Error("server failed.", "Error", err)
 		os.Exit(1)
 	}
 
@@ -195,23 +196,49 @@ func (s *Server) Run() {
 	slog.Info("Server shut down.")
 }
 
-var newServer = &Server{port: 8080}
+// EnsureSubdirectory ensures the presence of a subdirectory
+// under the current directory.
+func EnsureSubdirectory(subdirname string) (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	datadir := filepath.Join(wd, subdirname)
+	err = os.MkdirAll(datadir, 0755)
+	if err != nil {
+		return "", err
+	}
+
+	return datadir, nil
+}
 
 // New returns a Server instance. An implementation of tasks.TaskRepository
 // is required, to ensure task data can be stored and retrieved.
-func New(repo tasks.TaskRepository) *Server {
+func New(repo tasks.TaskRepository, port int) (*Server, error) {
+	newServer := &Server{port: port}
+
 	if repo == nil {
-		panic("could not initialize data store")
+		return nil, errors.New("could not initialize data store")
 	}
 	newServer.tasks = tasks.New(repo)
-	r := gin.Default()
-	r.Use(static.Serve("/", static.LocalFile(".", true)))
-	r.GET("/tasks", newServer.getAllTasks)
-	r.GET("/tasks/:id", newServer.getTaskByID)
-	r.POST("/tasks", newServer.addTask)
-	r.PUT("/tasks", newServer.updateTask)
-	r.DELETE("/tasks/:id", newServer.deleteTaskByID)
-	newServer.router = r
 
-	return newServer
+	handler := gin.Default()
+
+	// Set up static content serving
+	staticDir, err := EnsureSubdirectory("wwwroot")
+	if err != nil {
+		return nil, errors.New("could not set up static serving:" + err.Error())
+	}
+	handler.Use(static.Serve("/", static.LocalFile(staticDir, true)))
+
+	// Set up Tasks api
+	handler.GET("/tasks", newServer.getAllTasks)
+	handler.GET("/tasks/:id", newServer.getTaskByID)
+	handler.POST("/tasks", newServer.addTask)
+	handler.PUT("/tasks", newServer.updateTask)
+	handler.DELETE("/tasks/:id", newServer.deleteTaskByID)
+
+	newServer.router = handler
+	return newServer, nil
 }
